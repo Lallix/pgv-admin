@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PGV Admin</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%231F5C45'/><text x='32' y='42' font-family='Arial' font-weight='700' font-size='24' text-anchor='middle' fill='%23E2C25B'>PGV</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  --bg: #F4F2EC; --surface: #FFFFFF; --surface-2: #EFEDE5; --line: #E2DED2;
+  --text: #1B2420; --text-2: #4E5A54; --text-3: #8A938E;
+  --green: #1F5C45; --green-soft: #E3EFE9; --gold: #B8901F; --gold-soft: #F6EED6;
+  --danger: #B3362F; --danger-soft: #FBE9E7; --on-green: #FFFFFF;
+  --shadow: 0 1px 2px rgba(20,30,25,.06), 0 4px 16px rgba(20,30,25,.05);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1713; --surface: #16231D; --surface-2: #1D2D26; --line: #2A3B33;
+    --text: #ECEAE2; --text-2: #B5BDB8; --text-3: #7D8983;
+    --green: #4FB38A; --green-soft: #1C3A2E; --gold: #E2C25B; --gold-soft: #3A3218;
+    --danger: #F08A80; --danger-soft: #3D1F1C; --on-green: #0E1713;
+    --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1713; --surface: #16231D; --surface-2: #1D2D26; --line: #2A3B33;
+  --text: #ECEAE2; --text-2: #B5BDB8; --text-3: #7D8983;
+  --green: #4FB38A; --green-soft: #1C3A2E; --gold: #E2C25B; --gold-soft: #3A3218;
+  --danger: #F08A80; --danger-soft: #3D1F1C; --on-green: #0E1713;
+  --shadow: none; color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 15px/1.5 Manrope, system-ui, sans-serif; min-height: 100vh; }
+button, input { font: inherit; color: inherit; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 48px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 0; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -.3px; }
+.mark { width: 34px; height: 34px; border-radius: 10px; background: var(--green); color: var(--gold-soft); display: grid; place-items: center; font-size: 11px; font-weight: 800; letter-spacing: .5px; }
+:root[data-theme="dark"] .mark { color: #0E1713; }
+.brand small { color: var(--text-3); font-weight: 600; font-size: 13px; }
+.who { display: flex; align-items: center; gap: 10px; color: var(--text-3); font-size: 13px; min-width: 0; }
+.who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+.panel { max-width: 400px; margin: 8vh auto 0; padding: 28px 24px; }
+.panel h1 { font-size: 22px; letter-spacing: -.4px; margin-bottom: 6px; }
+.panel p.sub { color: var(--text-2); font-size: 14px; margin-bottom: 20px; }
+label.field { display: block; font-size: 12px; font-weight: 700; color: var(--text-2); margin-bottom: 12px; }
+label.field input { display: block; width: 100%; margin-top: 5px; padding: 11px 13px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg); outline: none; }
+label.field input:focus { border-color: var(--green); }
+.msg { font-size: 13px; min-height: 20px; margin: 4px 0 10px; color: var(--danger); }
+.msg.ok { color: var(--green); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 700; font-size: 13px; white-space: nowrap; }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--green); border-color: var(--green); color: var(--on-green); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--danger); }
+.btn.block { width: 100%; padding: 12px; font-size: 14px; }
+.btn.sm { padding: 6px 12px; font-size: 12px; }
+.btn:disabled { opacity: .5; cursor: default; }
+
+.toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 6px 0 14px; }
+.toolbar h2 { font-size: 20px; letter-spacing: -.3px; }
+.toolbar p { color: var(--text-3); font-size: 13px; }
+
+.user { padding: 16px; margin-bottom: 12px; }
+.user-top { display: flex; gap: 12px; align-items: flex-start; }
+.avatar { width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background: var(--green-soft); color: var(--green); display: grid; place-items: center; font-weight: 800; }
+.user.disabled .avatar { background: var(--surface-2); color: var(--text-3); }
+.user-id { flex: 1; min-width: 0; }
+.user-name { font-weight: 800; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.user-email { color: var(--text-2); font-size: 13px; overflow-wrap: anywhere; }
+.user-meta { color: var(--text-3); font-size: 12px; margin-top: 2px; }
+.chip { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.chip.admin { background: var(--gold-soft); color: var(--gold); }
+.chip.off { background: var(--danger-soft); color: var(--danger); }
+.chip.new { background: var(--surface-2); color: var(--text-2); }
+.apps { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 12px; }
+.app-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 8px; border-radius: 999px; border: 1px solid var(--line); cursor: pointer; font-size: 13px; font-weight: 700; user-select: none; }
+.app-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.switch { width: 30px; height: 18px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); position: relative; transition: background .15s; }
+.switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-3); transition: transform .15s, background .15s; }
+.app-toggle input:checked + .switch { background: var(--green); border-color: var(--green); }
+.app-toggle input:checked + .switch::after { transform: translateX(12px); background: var(--on-green); }
+.app-toggle input:focus-visible + .switch { outline: 2px solid var(--gold); outline-offset: 2px; }
+.app-toggle.busy { opacity: .6; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--line); padding-top: 12px; }
+
+.applist { display: grid; gap: 10px; margin-top: 8px; }
+.applink { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-radius: 12px; background: var(--surface-2); color: var(--text); text-decoration: none; font-weight: 700; }
+
+dialog { margin: auto; border: 0; padding: 0; background: transparent; width: min(440px, calc(100vw - 32px)); color: var(--text); }
+dialog::backdrop { background: rgba(10,15,12,.5); }
+dialog .card { padding: 22px 20px; }
+dialog h3 { font-size: 18px; margin-bottom: 4px; }
+dialog p.sub { color: var(--text-2); font-size: 13px; margin-bottom: 16px; }
+.row { display: flex; gap: 8px; margin-top: 8px; }
+.row .btn { flex: 1; }
+.checks { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.linkbox { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; font-size: 12px; word-break: break-all; color: var(--text-2); max-height: 96px; overflow: auto; margin: 4px 0 6px; }
+.note { font-size: 12px; color: var(--text-3); line-height: 1.5; }
+.empty, .loading { text-align: center; color: var(--text-3); padding: 48px 0; }
+#toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0; transition: .2s; background: var(--text); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 700; pointer-events: none; max-width: calc(100vw - 32px); }
+#toast.show { opacity: 1; transform: translateX(-50%); }
+[hidden] { display: none !important; }
+@media (max-width: 520px) {
+  .brand small, .who span { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><div class="mark">PGV</div><div>Admin <small>· users &amp; app access</small></div></div>
+    <div class="who" id="who" hidden><span id="who-email"></span><button class="btn sm" id="signout">Sign out</button></div>
+  </header>
+
+  <div id="view-loading" class="loading">Loading…</div>
+
+  <!-- Sign in -->
+  <form id="view-signin" class="card panel" hidden>
+    <h1>Sign in</h1>
+    <p class="sub">Use the same login as Cycle and GEM Planner.</p>
+    <label class="field">Email<input type="email" id="si-email" autocomplete="username" required></label>
+    <label class="field">Password<input type="password" id="si-password" autocomplete="current-password" required></label>
+    <div class="msg" id="si-msg"></div>
+    <button class="btn primary block" type="submit">Sign in</button>
+  </form>
+
+  <!-- Choose a password (invite and reset links land here) -->
+  <form id="view-setpw" class="card panel" hidden>
+    <h1 id="sp-title">Choose your password</h1>
+    <p class="sub" id="sp-sub">You'll use it to sign in to your apps.</p>
+    <label class="field">New password<input type="password" id="sp-pw" autocomplete="new-password" minlength="8" required></label>
+    <label class="field">Type it again<input type="password" id="sp-pw2" autocomplete="new-password" minlength="8" required></label>
+    <div class="msg" id="sp-msg"></div>
+    <button class="btn primary block" type="submit">Save password</button>
+  </form>
+
+  <!-- Someone who isn't an admin: their apps -->
+  <div id="view-apps" class="card panel" hidden>
+    <h1>You're all set</h1>
+    <p class="sub" id="apps-sub">Open your apps:</p>
+    <div class="applist" id="apps-list"></div>
+  </div>
+
+  <!-- Admin -->
+  <div id="view-admin" hidden>
+    <div class="toolbar">
+      <div><h2>Users</h2><p id="user-count"></p></div>
+      <button class="btn primary" id="add-user">+ Add user</button>
+    </div>
+    <div id="users"><div class="loading">Loading users…</div></div>
+  </div>
+</div>
+
+<!-- Add user -->
+<dialog id="dlg-add">
+  <form class="card" id="add-form">
+    <h3>Add a user</h3>
+    <p class="sub">You'll get a link to send them. It lets them choose their own password.</p>
+    <label class="field">Full name<input id="add-name" required></label>
+    <label class="field">Email<input type="email" id="add-email" required></label>
+    <div class="note" style="margin-bottom:6px;font-weight:700;color:var(--text-2)">Apps they can use</div>
+    <div class="checks" id="add-apps"></div>
+    <div class="msg" id="add-msg"></div>
+    <div class="row">
+      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn primary" type="submit">Create &amp; get link</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Edit name / email -->
+<dialog id="dlg-edit">
+  <form class="card" id="edit-form">
+    <h3>Edit user</h3>
+    <p class="sub">An email change takes effect straight away; they sign in with the new address.</p>
+    <label class="field">Full name<input id="edit-name" required></label>
+    <label class="field">Email<input type="email" id="edit-email" required></label>
+    <div class="msg" id="edit-msg"></div>
+    <div class="row">
+      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn primary" type="submit">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- A link to share (invite or reset) -->
+<dialog id="dlg-link">
+  <div class="card">
+    <h3 id="link-title">Send this link</h3>
+    <p class="sub" id="link-sub"></p>
+    <div class="linkbox" id="link-text"></div>
+    <p class="note">It works once. Send it by WhatsApp or email; opening it lets them choose a password, then shows their apps.</p>
+    <div class="row">
+      <button class="btn" id="link-copy">Copy link</button>
+      <button class="btn" id="link-share" hidden>Share…</button>
+      <button class="btn primary" data-close>Done</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const SURL = 'https://mjaschvxhdupoemaezjt.supabase.co'
+const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qYXNjaHZ4aGR1cG9lbWFlemp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjE1MDYsImV4cCI6MjA5NzUzNzUwNn0.mPAF1SmB2HimzFa58Zy3nt0ESAoE6TaOVU4YTwArobA'
+const APPS = {
+  cycle: { label: 'Cycle', url: 'https://lallix.github.io/Cycle/' },
+  gem:   { label: 'GEM Planner', url: 'https://lallix.github.io/gem-planner/' },
+}
+
+// Invite and reset links arrive with #...&type=invite|recovery; read it before
+// the client consumes the hash.
+const hash = new URLSearchParams(location.hash.slice(1))
+const arrivedVia = hash.get('type')
+const linkError = hash.get('error_description')
+
+const db = supabase.createClient(SURL, SKEY, { auth: { storageKey: 'pgv-admin-session', persistSession: true, detectSessionInUrl: true } })
+
+const $ = id => document.getElementById(id)
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
+let me = null, users = []
+
+function show(view) {
+  for (const v of ['loading', 'signin', 'setpw', 'apps', 'admin']) $('view-' + v).hidden = v !== view
+}
+function toast(text) {
+  const t = $('toast'); t.textContent = text; t.classList.add('show')
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600)
+}
+
+async function call(action, payload = {}) {
+  const { data, error } = await db.functions.invoke('pgv-admin', { body: { action, ...payload } })
+  if (error) {
+    let msg = error.message
+    try { msg = (await error.context.json()).error || msg } catch {}
+    throw new Error(msg)
+  }
+  return data
+}
+
+// ── Start ───────────────────────────────────────────────────────────────────
+async function start() {
+  const { data: { session } } = await db.auth.getSession()
+  if (session && (arrivedVia === 'invite' || arrivedVia === 'recovery')) {
+    history.replaceState(null, '', location.pathname)
+    if (arrivedVia === 'recovery') { $('sp-title').textContent = 'Choose a new password'; $('sp-sub').textContent = 'For ' + session.user.email }
+    signedIn(session.user, false)
+    return show('setpw')
+  }
+  if (session) return route(session.user)
+  if (linkError) $('si-msg').textContent = linkError.includes('expired') || linkError.includes('invalid')
+    ? 'That link has expired or was already used. Ask Gideon for a new one.' : linkError
+  show('signin')
+}
+
+function signedIn(user, showWho = true) {
+  me = user
+  $('who-email').textContent = user.email
+  $('who').hidden = !showWho
+}
+
+async function route(user) {
+  signedIn(user)
+  const { data: isAdmin } = await db.rpc('is_admin')
+  if (isAdmin) { show('admin'); return loadUsers() }
+  const checks = await Promise.all(Object.keys(APPS).map(async a => [a, (await db.rpc('has_app', { p_app: a })).data === true]))
+  const mine = checks.filter(([, ok]) => ok).map(([a]) => a)
+  $('apps-sub').textContent = mine.length ? 'Open your apps:' : "Your account doesn't have any apps yet. Ask Gideon to give you access."
+  $('apps-list').innerHTML = mine.map(a => `<a class="applink" href="${APPS[a].url}">${esc(APPS[a].label)}<span>→</span></a>`).join('')
+  show('apps')
+}
+
+$('view-signin').addEventListener('submit', async e => {
+  e.preventDefault()
+  $('si-msg').textContent = ''
+  const { data, error } = await db.auth.signInWithPassword({ email: $('si-email').value.trim(), password: $('si-password').value })
+  if (error) return $('si-msg').textContent = /invalid/i.test(error.message) ? 'Incorrect email or password' : error.message
+  route(data.user)
+})
+
+$('view-setpw').addEventListener('submit', async e => {
+  e.preventDefault()
+  const pw = $('sp-pw').value, msg = $('sp-msg')
+  msg.textContent = ''
+  if (pw.length < 8) return msg.textContent = 'Use at least 8 characters'
+  if (pw !== $('sp-pw2').value) return msg.textContent = "The two passwords don't match"
+  const { error } = await db.auth.updateUser({ password: pw })
+  if (error) return msg.textContent = error.message
+  toast('Password saved')
+  route(me)
+})
+
+$('signout').addEventListener('click', async () => { await db.auth.signOut(); location.reload() })
+
+// ── Users ───────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  try {
+    users = (await call('list')).users
+    renderUsers()
+  } catch (e) {
+    $('users').innerHTML = `<div class="empty">Couldn't load users: ${esc(e.message)}</div>`
+  }
+}
+
+function renderUsers() {
+  $('user-count').textContent = `${users.length} account${users.length === 1 ? '' : 's'} · one login for every PGV app`
+  if (!users.length) return $('users').innerHTML = '<div class="empty">No users yet</div>'
+  $('users').innerHTML = users.map(u => {
+    const self = u.id === me.id
+    const name = u.full_name || u.email.split('@')[0]
+    const chips = [
+      u.is_admin && '<span class="chip admin">Admin</span>',
+      u.is_disabled && '<span class="chip off">Disabled</span>',
+      !u.last_sign_in_at && '<span class="chip new">Invited</span>',
+    ].filter(Boolean).join('')
+    const meta = u.last_sign_in_at ? 'Last signed in ' + fmtDate(u.last_sign_in_at) : 'Added ' + fmtDate(u.created_at) + ', not signed in yet'
+    const toggles = Object.entries(APPS).map(([a, app]) => `
+      <label class="app-toggle"><input type="checkbox" data-access="${a}" ${u.apps.includes(a) ? 'checked' : ''}>
+        <span class="switch"></span>${esc(app.label)}</label>`).join('')
+    return `<div class="card user ${u.is_disabled ? 'disabled' : ''}" data-id="${u.id}">
+      <div class="user-top">
+        <div class="avatar">${esc(name[0].toUpperCase())}</div>
+        <div class="user-id">
+          <div class="user-name">${esc(name)}${self ? ' <span class="note">(you)</span>' : ''} ${chips}</div>
+          <div class="user-email">${esc(u.email)}</div>
+          <div class="user-meta">${meta}</div>
+        </div>
+      </div>
+      <div class="apps">${toggles}</div>
+      <div class="actions">
+        <button class="btn sm" data-act="edit">Edit</button>
+        <button class="btn sm" data-act="link">${u.last_sign_in_at ? 'Password reset link' : 'New invite link'}</button>
+        ${self ? '' : `<button class="btn sm" data-act="admin">${u.is_admin ? 'Remove admin' : 'Make admin'}</button>
+        <button class="btn sm ${u.is_disabled ? '' : 'danger'}" data-act="disable">${u.is_disabled ? 'Enable' : 'Disable'}</button>`}
+      </div>
+    </div>`
+  }).join('')
+}
+
+$('users').addEventListener('change', async e => {
+  const box = e.target.closest('[data-access]')
+  if (!box) return
+  const card = box.closest('.user'), u = users.find(x => x.id === card.dataset.id)
+  const app = box.dataset.access, on = box.checked, label = box.closest('.app-toggle')
+  label.classList.add('busy'); box.disabled = true
+  try {
+    await call('set_access', { user_id: u.id, app, on })
+    u.apps = on ? [...u.apps, app] : u.apps.filter(a => a !== app)
+    toast(`${u.full_name || u.email}: ${APPS[app].label} ${on ? 'on' : 'off'}`)
+  } catch (err) {
+    box.checked = !on
+    toast(err.message)
+  } finally { label.classList.remove('busy'); box.disabled = false }
+})
+
+$('users').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-act]')
+  if (!btn) return
+  const u = users.find(x => x.id === btn.closest('.user').dataset.id)
+  const name = u.full_name || u.email
+  const act = btn.dataset.act
+  if (act === 'edit') {
+    $('edit-form').dataset.id = u.id
+    $('edit-name').value = u.full_name; $('edit-email').value = u.email; $('edit-msg').textContent = ''
+    return $('dlg-edit').showModal()
+  }
+  btn.disabled = true
+  try {
+    if (act === 'link') {
+      const { link } = await call('link', { user_id: u.id })
+      showLink(u.last_sign_in_at ? 'Password reset link' : 'Invite link', `For ${name} (${u.email})`, link)
+    } else if (act === 'admin') {
+      if (!confirm(u.is_admin ? `Remove admin rights from ${name}?` : `Make ${name} an admin? They'll be able to manage every user.`)) return
+      await call('update', { user_id: u.id, is_admin: !u.is_admin })
+      u.is_admin = !u.is_admin; renderUsers(); toast('Saved')
+    } else if (act === 'disable') {
+      if (!u.is_disabled && !confirm(`Disable ${name}? They'll be signed out of every PGV app and can't sign in until you enable them again.`)) return
+      await call('update', { user_id: u.id, is_disabled: !u.is_disabled })
+      u.is_disabled = !u.is_disabled; renderUsers(); toast(u.is_disabled ? 'Disabled' : 'Enabled')
+    }
+  } catch (err) { toast(err.message) }
+  finally { btn.disabled = false }
+})
+
+// ── Dialogs ─────────────────────────────────────────────────────────────────
+document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e => {
+  if (e.target.closest('[data-close]') || e.target === d) d.close()
+}))
+
+$('add-user').addEventListener('click', () => {
+  $('add-form').reset(); $('add-msg').textContent = ''
+  $('add-apps').innerHTML = Object.entries(APPS).map(([a, app]) => `
+    <label class="app-toggle"><input type="checkbox" value="${a}"><span class="switch"></span>${esc(app.label)}</label>`).join('')
+  $('dlg-add').showModal()
+})
+
+$('add-form').addEventListener('submit', async e => {
+  e.preventDefault()
+  const apps = [...$('add-apps').querySelectorAll('input:checked')].map(i => i.value)
+  const msg = $('add-msg'); msg.textContent = ''
+  if (!apps.length) return msg.textContent = 'Pick at least one app'
+  const submit = e.submitter; submit.disabled = true
+  try {
+    const name = $('add-name').value.trim(), email = $('add-email').value.trim()
+    const { link } = await call('invite', { full_name: name, email, apps })
+    $('dlg-add').close()
+    showLink('Invite link', `For ${name} (${email}) · ${apps.map(a => APPS[a].label).join(' and ')}`, link)
+    loadUsers()
+  } catch (err) { msg.textContent = err.message }
+  finally { submit.disabled = false }
+})
+
+$('edit-form').addEventListener('submit', async e => {
+  e.preventDefault()
+  const u = users.find(x => x.id === e.target.dataset.id)
+  const full_name = $('edit-name').value.trim(), email = $('edit-email').value.trim().toLowerCase()
+  const changes = {}
+  if (full_name !== u.full_name) changes.full_name = full_name
+  if (email !== u.email) changes.email = email
+  if (!Object.keys(changes).length) return $('dlg-edit').close()
+  const submit = e.submitter; submit.disabled = true
+  try {
+    await call('update', { user_id: u.id, ...changes })
+    Object.assign(u, changes); renderUsers(); $('dlg-edit').close(); toast('Saved')
+  } catch (err) { $('edit-msg').textContent = err.message }
+  finally { submit.disabled = false }
+})
+
+function showLink(title, sub, link) {
+  $('link-title').textContent = title; $('link-sub').textContent = sub; $('link-text').textContent = link
+  $('link-share').hidden = !navigator.share
+  $('dlg-link').showModal()
+}
+$('link-copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('link-text').textContent); toast('Link copied') }
+  catch { toast('Copy failed: select the link and copy it') }
+})
+$('link-share').addEventListener('click', () => {
+  navigator.share({ title: 'PGV apps', text: 'Your link to set up your PGV apps password:', url: $('link-text').textContent }).catch(() => {})
+})
+
+start()
+</script>
+</body>
+</html>
