@@ -1,0 +1,16 @@
+{
+  "name": "PGV Admin",
+  "short_name": "PGV Admin",
+  "description": "Users and app access for the PGV apps",
+  "id": "/pgv-admin/",
+  "start_url": "/pgv-admin/",
+  "scope": "/pgv-admin/",
+  "display": "standalone",
+  "background_color": "#0B233D",
+  "theme_color": "#0B233D",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

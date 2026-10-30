@@ -5,7 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PGV Admin</title>
 <meta name="robots" content="noindex">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%2300F064'/><text x='32' y='42' font-family='Arial' font-weight='700' font-size='24' text-anchor='middle' fill='%230B233D'>PGV</text></svg>">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0B233D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PGV Admin">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -57,7 +64,7 @@ body {
   background-attachment: fixed;
 }
 button, input { font: inherit; color: inherit; }
-.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 56px; }
+.wrap { max-width: 760px; margin: 0 auto; padding: env(safe-area-inset-top) max(16px, env(safe-area-inset-right)) calc(56px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
 header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 0; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; letter-spacing: -.3px; }
 .mark { width: 36px; height: 36px; border-radius: 12px; background: var(--grad); color: var(--ink); display: grid; place-items: center; font-size: 11px; font-weight: 800; letter-spacing: .3px; }
@@ -483,6 +490,8 @@ $('link-copy').addEventListener('click', async () => {
 $('link-share').addEventListener('click', () => {
   navigator.share({ title: 'PGV apps', text: 'Your link to set up your PGV apps password:', url: $('link-text').textContent }).catch(() => {})
 })
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {})
 
 start()
 </script>
