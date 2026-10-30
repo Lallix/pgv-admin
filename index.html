@@ -128,6 +128,10 @@ dialog p.sub { color: var(--text-2); font-size: 13px; margin-bottom: 18px; }
 .checks { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
 .linkbox { background: var(--surface-2); border-radius: 14px; padding: 10px 14px; font-size: 12px; word-break: break-all; color: var(--text-2); max-height: 96px; overflow: auto; margin: 4px 0 8px; }
 .note { font-size: 12px; color: var(--text-3); line-height: 1.5; }
+.group-head { display: flex; align-items: center; gap: 10px; margin: 24px 4px 12px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
+.group-head:first-child { margin-top: 4px; }
+.group-head::after { content: ''; flex: 1; height: 1px; background: var(--line-2); }
+.group-count { min-width: 22px; padding: 1px 8px; border-radius: 999px; background: var(--grad); color: var(--ink); font-size: 11px; text-align: center; letter-spacing: 0; }
 .empty, .loading { text-align: center; color: var(--text-3); padding: 48px 0; }
 #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0; transition: .2s; background: var(--grad); color: var(--ink); padding: 11px 20px; border-radius: 999px; font-size: 13px; font-weight: 700; pointer-events: none; max-width: calc(100vw - 32px); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
 #toast.show { opacity: 1; transform: translateX(-50%); }
@@ -339,11 +343,19 @@ async function loadUsers() {
 function renderUsers() {
   $('user-count').textContent = `${users.length} account${users.length === 1 ? '' : 's'} · one login for every PGV app`
   if (!users.length) return $('users').innerHTML = '<div class="empty">No users yet</div>'
-  $('users').innerHTML = users.map(u => {
+  // Admins first, then everyone else; A–Z by name within each group
+  const nameOf = u => u.full_name || u.email.split('@')[0]
+  const az = list => [...list].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'en', { sensitivity: 'base' }))
+  const groups = [['Admins', az(users.filter(u => u.is_admin))], ['Users', az(users.filter(u => !u.is_admin))]]
+  $('users').innerHTML = groups.filter(([, list]) => list.length).map(([label, list]) =>
+    `<div class="group-head"><span>${label}</span><span class="group-count">${list.length}</span></div>`
+    + list.map(userCard).join('')).join('')
+}
+
+function userCard(u) {
     const self = u.id === me.id
     const name = u.full_name || u.email.split('@')[0]
     const chips = [
-      u.is_admin && '<span class="chip admin">Admin</span>',
       u.is_disabled && '<span class="chip off">Disabled</span>',
       !u.last_sign_in_at && '<span class="chip new">Invited</span>',
     ].filter(Boolean).join('')
@@ -368,7 +380,6 @@ function renderUsers() {
         <button class="btn sm ${u.is_disabled ? '' : 'danger'}" data-act="disable">${u.is_disabled ? 'Enable' : 'Disable'}</button>`}
       </div>
     </div>`
-  }).join('')
 }
 
 $('users').addEventListener('change', async e => {
