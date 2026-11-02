@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pgv-admin",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5204", "--bind", "127.0.0.1"],
+      "port": 5204,
+      "autoPort": false
+    }
+  ]
+}
