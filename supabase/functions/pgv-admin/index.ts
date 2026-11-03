@@ -95,7 +95,13 @@ async function invite(admin, callerId, { email, full_name, apps = [] }) {
     const { error: ae } = await admin.from('app_access').upsert(rows, { onConflict: 'user_id,app' })
     if (ae) throw ae
   }
-  return { link: data.properties.action_link, user_id: id }
+  return { link: pageLink(data, 'invite', rows.map(r => r.app)), user_id: id }
+}
+
+// Link to the page itself with the token; the page redeems it when they press
+// Save. Supabase's own action_link is used up by WhatsApp/browser previews.
+function pageLink(data, type, apps) {
+  return `${SITE}#token_hash=${data.properties.hashed_token}&type=${type}&apps=${apps.join(',')}`
 }
 
 async function resetLink(admin, userId) {
@@ -105,7 +111,8 @@ async function resetLink(admin, userId) {
     type: 'recovery', email: user.email, options: { redirectTo: SITE },
   })
   if (le) throw le
-  return { link: data.properties.action_link }
+  const { data: access } = await admin.from('app_access').select('app').eq('user_id', userId)
+  return { link: pageLink(data, 'recovery', (access ?? []).map(r => r.app)) }
 }
 
 async function setAccess(admin, callerId, { user_id, app, on }) {

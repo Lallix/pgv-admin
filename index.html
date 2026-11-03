@@ -252,11 +252,16 @@ const APPS = {
   gem:   { label: 'GEM Planner', url: 'https://lallix.github.io/gem-planner/' },
 }
 
-// Invite and reset links arrive with #...&type=invite|recovery; read it before
-// the client consumes the hash.
+// Invite and reset links arrive as #token_hash=…&type=invite|recovery&apps=…
+// The token is only redeemed when they press Save: WhatsApp and browsers open
+// links in the background for previews, which used up Supabase's own
+// one-time links before the person got there. Older links still arrive as
+// #access_token=…&type=…; read the hash before the client consumes it.
 const hash = new URLSearchParams(location.hash.slice(1))
 const arrivedVia = hash.get('type')
 const linkError = hash.get('error_description')
+let tokenHash = hash.get('token_hash')
+const LINK_EXPIRED = 'That link has expired or was already used. Ask Gideon for a new one.'
 
 const db = supabase.createClient(SURL, SKEY, { auth: { storageKey: 'pgv-admin-session', persistSession: true, detectSessionInUrl: true } })
 
@@ -285,27 +290,37 @@ async function call(action, payload = {}) {
 
 // ── Start ───────────────────────────────────────────────────────────────────
 async function start() {
+  const isLink = arrivedVia === 'invite' || arrivedVia === 'recovery'
+  if (tokenHash && isLink) {
+    history.replaceState(null, '', location.pathname)
+    const apps = (hash.get('apps') || '').split(',').filter(a => APPS[a])
+    return showSetPassword(apps)
+  }
   const { data: { session } } = await db.auth.getSession()
-  if (session && (arrivedVia === 'invite' || arrivedVia === 'recovery')) {
+  if (session && isLink) {
     history.replaceState(null, '', location.pathname)
     signedIn(session.user, false)
-    // People arriving from a link are usually not admins: talk about their apps, not PGV Admin
-    const names = (await myApps()).map(a => APPS[a].label).join(' and ') || 'your apps'
-    $('brand-text').textContent = names
-    document.title = names
-    if (arrivedVia === 'recovery') {
-      $('sp-title').textContent = 'Choose a new password'
-      $('sp-sub').textContent = `For ${session.user.email}. You'll use it to sign in to ${names}.`
-    } else {
-      $('sp-title').innerHTML = `Welcome to <span class="grad-text">${esc(names)}</span>`
-      $('sp-sub').textContent = `Choose a password. You'll use it with ${session.user.email} to sign in to ${names}.`
-    }
-    return show('setpw')
+    return showSetPassword(await myApps(), session.user.email)
   }
   if (session) return route(session.user)
-  if (linkError) $('si-msg').textContent = linkError.includes('expired') || linkError.includes('invalid')
-    ? 'That link has expired or was already used. Ask Gideon for a new one.' : linkError
+  if (linkError) $('si-msg').textContent = linkError.includes('expired') || linkError.includes('invalid') ? LINK_EXPIRED : linkError
   show('signin')
+}
+
+// People arriving from a link are usually not admins: talk about their apps, not PGV Admin
+function showSetPassword(apps, email) {
+  const names = apps.map(a => APPS[a].label).join(' and ') || 'your apps'
+  $('brand-text').textContent = names
+  document.title = names
+  const login = email ? ` with ${email}` : ''
+  if (arrivedVia === 'recovery') {
+    $('sp-title').textContent = 'Choose a new password'
+    $('sp-sub').textContent = `You'll use it${login} to sign in to ${names}.`
+  } else {
+    $('sp-title').innerHTML = `Welcome to <span class="grad-text">${esc(names)}</span>`
+    $('sp-sub').textContent = `Choose a password. You'll use it${login} to sign in to ${names}.`
+  }
+  show('setpw')
 }
 
 function signedIn(user, showWho = true) {
@@ -349,6 +364,12 @@ $('view-setpw').addEventListener('submit', async e => {
   msg.textContent = ''
   if (pw.length < 8) return msg.textContent = 'Use at least 8 characters'
   if (pw !== $('sp-pw2').value) return msg.textContent = "The two passwords don't match"
+  if (tokenHash) {
+    const { data, error } = await db.auth.verifyOtp({ token_hash: tokenHash, type: arrivedVia })
+    if (error) return msg.textContent = /expired|invalid|not found/i.test(error.message) ? LINK_EXPIRED : error.message
+    tokenHash = null
+    signedIn(data.user, false)
+  }
   const { error } = await db.auth.updateUser({ password: pw })
   if (error) return msg.textContent = error.message
   toast('Password saved')
