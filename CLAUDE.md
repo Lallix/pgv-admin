@@ -13,3 +13,6 @@ User account manager for the personal PGV apps (Cycle and GEM Planner), which sh
 - Only work inside this folder. Never start another app's server.
 - Use relative paths only. This folder is opened on two PCs with different Windows usernames (`GideonV` and `lalli`).
 - The service-role key lives only in Supabase secrets, never in this repo.
+
+## Previous discussions
+Before starting work, read `_files\docs\claude-history\HANDOVER.md`: where the build stands, key decisions, and open questions from earlier Claude sessions. The full past conversations are in the same folder; search them when you need detail.
