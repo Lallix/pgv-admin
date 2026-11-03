@@ -152,7 +152,7 @@ dialog p.sub { color: var(--text-2); font-size: 13px; margin-bottom: 18px; }
 <body>
 <div class="wrap">
   <header>
-    <div class="brand"><div class="mark">PGV</div><div>Admin <small>· users &amp; app access</small></div></div>
+    <div class="brand"><div class="mark">PGV</div><div id="brand-text">Admin <small>· users &amp; app access</small></div></div>
     <div class="who" id="who" hidden><span id="who-email"></span><button class="btn sm" id="signout">Sign out</button></div>
   </header>
 
@@ -288,8 +288,18 @@ async function start() {
   const { data: { session } } = await db.auth.getSession()
   if (session && (arrivedVia === 'invite' || arrivedVia === 'recovery')) {
     history.replaceState(null, '', location.pathname)
-    if (arrivedVia === 'recovery') { $('sp-title').textContent = 'Choose a new password'; $('sp-sub').textContent = 'For ' + session.user.email }
     signedIn(session.user, false)
+    // People arriving from a link are usually not admins: talk about their apps, not PGV Admin
+    const names = (await myApps()).map(a => APPS[a].label).join(' and ') || 'your apps'
+    $('brand-text').textContent = names
+    document.title = names
+    if (arrivedVia === 'recovery') {
+      $('sp-title').textContent = 'Choose a new password'
+      $('sp-sub').textContent = `For ${session.user.email}. You'll use it to sign in to ${names}.`
+    } else {
+      $('sp-title').innerHTML = `Welcome to <span class="grad-text">${esc(names)}</span>`
+      $('sp-sub').textContent = `Choose a password. You'll use it with ${session.user.email} to sign in to ${names}.`
+    }
     return show('setpw')
   }
   if (session) return route(session.user)
@@ -304,15 +314,25 @@ function signedIn(user, showWho = true) {
   $('who').hidden = !showWho
 }
 
-async function route(user) {
+async function myApps() {
+  const checks = await Promise.all(Object.keys(APPS).map(async a => [a, (await db.rpc('has_app', { p_app: a })).data === true]))
+  return checks.filter(([, ok]) => ok).map(([a]) => a)
+}
+
+async function route(user, justSetPassword = false) {
   signedIn(user)
   const { data: isAdmin } = await db.rpc('is_admin')
   if (isAdmin) { show('admin'); return loadUsers() }
-  const checks = await Promise.all(Object.keys(APPS).map(async a => [a, (await db.rpc('has_app', { p_app: a })).data === true]))
-  const mine = checks.filter(([, ok]) => ok).map(([a]) => a)
-  $('apps-sub').textContent = mine.length ? 'Open your apps:' : "Your account doesn't have any apps yet. Ask Gideon to give you access."
+  const mine = await myApps()
+  $('apps-sub').textContent = !mine.length ? "Your account doesn't have any apps yet. Ask Gideon to give you access."
+    : justSetPassword ? 'Password saved. Sign in with your email and new password:' : 'Open your apps:'
   $('apps-list').innerHTML = mine.map(a => `<a class="applink" href="${APPS[a].url}">${esc(APPS[a].label)}<span>→</span></a>`).join('')
   show('apps')
+  // Only one app: take them straight there
+  if (justSetPassword && mine.length === 1) {
+    $('apps-sub').textContent = `Password saved. Opening ${APPS[mine[0]].label}; sign in there with your email and new password.`
+    setTimeout(() => location.href = APPS[mine[0]].url, 3000)
+  }
 }
 
 $('view-signin').addEventListener('submit', async e => {
@@ -332,7 +352,7 @@ $('view-setpw').addEventListener('submit', async e => {
   const { error } = await db.auth.updateUser({ password: pw })
   if (error) return msg.textContent = error.message
   toast('Password saved')
-  route(me)
+  route(me, true)
 })
 
 $('signout').addEventListener('click', async () => { await db.auth.signOut(); location.reload() })
